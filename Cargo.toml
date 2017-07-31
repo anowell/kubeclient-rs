@@ -1,0 +1,16 @@
+[package]
+name = "kubeclient"
+version = "0.1.0"
+authors = ["Anthony Nowell <anowell@gmail.com>"]
+
+[dependencies]
+base64 = "0.6.0"
+error-chain = "0.11.0-rc.2"
+serde = "1.0.11"
+serde_derive = "1.0.11"
+serde_json = "1.0.2"
+serde_yaml = "0.7.1"
+url = { version = "1.5.1" }
+url_serde = "0.2.0"
+openssl = "0.9.15"
+reqwest = { git = "https://github.com/anowell/reqwest.git", branch = "pkcs" }
