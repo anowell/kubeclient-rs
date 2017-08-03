@@ -13,7 +13,7 @@ extern crate url_serde;
 pub mod errors;
 pub mod config;
 pub mod client;
-pub mod data;
+pub mod resources;
 
 pub use client::KubeClient;
 pub use config::KubeConfig;

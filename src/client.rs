@@ -1,24 +1,59 @@
 use reqwest::{self, StatusCode};
 use std::path::Path;
 use config::KubeConfig;
-use data::Status;
+use resources::{Resource, Kind, Status};
 use std::fs::File;
 use std::io::Read;
 use openssl::pkcs12::Pkcs12;
-use serde::Serialize;
+use serde::{Serialize};
 use serde::de::DeserializeOwned;
 use serde_json::{self, Value};
 use url::Url;
 use errors::*;
 
+
 pub struct KubeClient {
+    kube: KubeClientLowLevel
+}
+
+impl KubeClient {
+    pub fn new<P: AsRef<Path>>(path: P) -> KubeClient {
+        KubeClient{ kube: KubeClientLowLevel::new(path) }
+    }
+
+    pub fn low_level(&self) -> &KubeClientLowLevel {
+        &self.kube
+    }
+
+    pub fn namespace(&self, namespace: &str) -> KubeClient {
+        KubeClient { kube: self.kube.namespace(&namespace) }
+    }
+
+    pub fn exists<R: Resource>(&self, name: &str) -> Result<bool> {
+        self.kube.exists(R::kind().route(), &name)
+    }
+
+    pub fn get<R: Resource>(&self, name: &str) -> Result<R> {
+        self.kube.get(R::kind().route(), &name)
+    }
+
+    pub fn create<R: Resource>(&self, resource: &R) -> Result<R> {
+        self.kube.apply(R::kind().route(), &resource)
+    }
+
+    pub fn delete<R: Resource>(&self, name: &str) -> Result<()> {
+        self.kube.delete(R::kind().route(), &name)
+    }
+}
+
+pub struct KubeClientLowLevel {
     client: reqwest::Client,
     base_url: Url,
     namespace: String,
 }
 
-impl KubeClient {
-    pub fn new<P: AsRef<Path>>(path: P) -> KubeClient {
+impl KubeClientLowLevel {
+    pub fn new<P: AsRef<Path>>(path: P) -> KubeClientLowLevel {
         let kubeconfig = KubeConfig::load(path).expect("TODO: explain why load failed");
         let context = kubeconfig.default_context().expect("Failed to get default context from kubeconfig");
         let auth_info = context.user;
@@ -42,11 +77,11 @@ impl KubeClient {
             .build()
             .expect("Failed to build reqwest client");
 
-        KubeClient { client, base_url: cluster.server, namespace: "default".to_owned() }
+        KubeClientLowLevel { client, base_url: cluster.server, namespace: "default".to_owned() }
     }
 
-    pub fn namespace(&self, namespace: &str) -> KubeClient {
-        KubeClient {
+    pub fn namespace(&self, namespace: &str) -> KubeClientLowLevel {
+        KubeClientLowLevel {
             client: self.client.clone(),
             base_url: self.base_url.clone(),
             namespace: namespace.to_owned(),
@@ -58,7 +93,6 @@ impl KubeClient {
         let mut output = String::new();
         let _ = response.read_to_string(&mut output)?;
         Ok(output)
-
     }
 
     pub fn check<D>(&self, route: &str) -> Result<D>

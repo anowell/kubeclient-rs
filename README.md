@@ -10,13 +10,8 @@ For now...
 ```rust
 let kube = KubeClient::new("admin.conf");
 
-let health = kube.health()?;
-if health == "ok" {
-  if !kube.exists("pods", "my-pod-name")? {
-    let output: Value = kube.apply("pods", get_my_pod_spec())?
-    // ...
-  }
-} else {
-  println!("Health: {}", health);
+if !kube.exists::<Secret>("my-secret")? {
+  let output: Secret = kube.get("my-secret")?
+  // ...
 }
 ```
