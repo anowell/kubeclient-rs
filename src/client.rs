@@ -17,8 +17,10 @@ pub struct KubeClient {
 }
 
 impl KubeClient {
-    pub fn new<P: AsRef<Path>>(path: P) -> KubeClient {
-        KubeClient{ kube: KubeClientLowLevel::new(path) }
+    pub fn from_conf<P: AsRef<Path>>(path: P) -> Result<KubeClient> {
+        Ok(KubeClient{
+            kube: KubeClientLowLevel::from_conf(path)?,
+        })
     }
 
     pub fn low_level(&self) -> &KubeClientLowLevel {
@@ -27,6 +29,10 @@ impl KubeClient {
 
     pub fn namespace(&self, namespace: &str) -> KubeClient {
         KubeClient { kube: self.kube.namespace(&namespace) }
+    }
+
+    pub fn healthy(&self) -> Result<bool> {
+        Ok(self.kube.health()? == "ok")
     }
 
     pub fn exists<R: Resource>(&self, name: &str) -> Result<bool> {
@@ -53,31 +59,36 @@ pub struct KubeClientLowLevel {
 }
 
 impl KubeClientLowLevel {
-    pub fn new<P: AsRef<Path>>(path: P) -> KubeClientLowLevel {
-        let kubeconfig = KubeConfig::load(path).expect("TODO: explain why load failed");
-        let context = kubeconfig.default_context().expect("Failed to get default context from kubeconfig");
+    pub fn from_conf<P: AsRef<Path>>(path: P) -> Result<KubeClientLowLevel> {
+        let kubeconfig = KubeConfig::load(path)?;
+        let context = kubeconfig.default_context()?;
         let auth_info = context.user;
 
         let cluster = context.cluster;
 
-        let ca_cert = cluster.ca_cert().expect("kubeconfig missing CA cert");
-        let client_cert = auth_info.client_certificate().expect("kubeconfig missing client cert");
-        let client_key = auth_info.client_key().expect("kubeconfig missing client key");
-        let pkcs_cert = Pkcs12::builder().build("", "admin", &client_key, &client_cert).expect("Failed to build Pkcs12");
+        let ca_cert = cluster.ca_cert()
+            .chain_err(|| "kubeconfig missing CA cert")?;
+        let client_cert = auth_info.client_certificate()
+            .chain_err(|| "kubeconfig missing client cert")?;
+        let client_key = auth_info.client_key().chain_err(|| "kubeconfig missing client key")?;
+        let pkcs_cert = Pkcs12::builder()
+            .build("", "admin", &client_key, &client_cert)
+            .chain_err(|| "Failed to build Pkcs12")?;
 
         let req_ca_cert = reqwest::Certificate::from_der(&ca_cert.to_der().unwrap()).unwrap();
         let req_pkcs_cert = reqwest::Pkcs12::from_der(&pkcs_cert.to_der().unwrap(), "").unwrap();
 
-        let client = reqwest::Client::builder().expect("failed to create reqwest client builder")
+        let client = reqwest::Client::builder()
+            .chain_err(|| "Failed to create reqwest client builder")?
             .add_root_certificate(req_ca_cert)
-            .expect("Failed to add root cert to reqwest client")
+            .chain_err(|| "Failed to add root cert to reqwest client")?
             .identity(req_pkcs_cert)
-            .expect("Failed to add PKCS cert and key to reqwest client")
+            .chain_err(|| "Failed to add PKCS cert and key to reqwest client")?
             .danger_disable_hostname_verification()
             .build()
-            .expect("Failed to build reqwest client");
+            .chain_err(|| "Failed to build reqwest client")?;
 
-        KubeClientLowLevel { client, base_url: cluster.server, namespace: "default".to_owned() }
+        Ok(KubeClientLowLevel { client, base_url: cluster.server, namespace: "default".to_owned() })
     }
 
     pub fn namespace(&self, namespace: &str) -> KubeClientLowLevel {
