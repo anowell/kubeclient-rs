@@ -53,7 +53,7 @@ impl KubeClient {
         Ok(R::list_items(response))
     }
 
-    pub fn list_with_query<R: ListableResource>(&self, query: R::QueryParams) -> Result<Vec<R>> {
+    pub fn list_with_query<R: ListableResource>(&self, query: &R::QueryParams) -> Result<Vec<R>> {
         let json = serde_json::to_string(&query)?;
         let map: BTreeMap<String,String> = serde_json::from_str(&json)?;
         let response: R::ListResponse =
@@ -236,7 +236,8 @@ impl KubeClientLowLevel {
      {
         let mut url = self.base_url.join(route)?;
         url.query_pairs_mut().extend_pairs(query);
-        let mut req = self.client.get(self.base_url.join(route)?)
+
+        let mut req = self.client.get(url)
             .expect("URL failed to be built");
 
         let mut response = req.send().chain_err(|| "Failed to GET URL")?;

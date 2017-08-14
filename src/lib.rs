@@ -4,10 +4,10 @@
 
 extern crate base64;
 extern crate chrono;
+extern crate openssl;
 extern crate reqwest;
 extern crate serde;
 extern crate serde_yaml;
-extern crate openssl;
 extern crate url;
 extern crate url_serde;
 
