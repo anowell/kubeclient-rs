@@ -5,13 +5,22 @@ but I'm open to discussion, so please file an issue if you have any thoughts.
 
 ## Usage
 
-For now...
+For now, using it feels about like this:
 
 ```rust
+use kubeclient::KubeClient;
+use kubeclient::resources::{Secret, Node};
+
 let kube = KubeClient::new("admin.conf");
 
-if !kube.exists::<Secret>("my-secret")? {
-  let output: Secret = kube.get("my-secret")?
-  // ...
+if kube.healthy()? {
+  if !kube.exists::<Secret>("my-secret")? {
+    let output: Secret = kube.get("my-secret")?
+    // ...
+  }
+
+  for node in kube.list::<Node>()? {
+    println!("Found node: {}", node.metadata.name);
+  }
 }
 ```
