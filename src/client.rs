@@ -1,7 +1,7 @@
 use reqwest::{self, StatusCode};
 use std::path::Path;
 use config::KubeConfig;
-use resources::{Kind, Resource, Metadata, ListableResource, Status};
+use resources::{Kind, Resource, Metadata, ListableResource, ListQuery, Status};
 use std::fs::File;
 use std::io::Read;
 use openssl::pkcs12::Pkcs12;
@@ -61,7 +61,7 @@ impl KubeClient {
         self.kube.get(&route)
     }
 
-    pub fn list<R: ListableResource>(&self, query: Option<&R::QueryParams>) -> Result<Vec<R>> {
+    pub fn list<R: ListableResource>(&self, query: Option<&ListQuery>) -> Result<Vec<R>> {
         let mut route = KindRoute::new(R::api(), R::kind().route());
         if let Some(ns) = self.get_ns::<R>() {
             route.namespace(ns);
