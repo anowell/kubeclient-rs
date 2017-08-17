@@ -17,7 +17,7 @@ use std::fmt;
 use std::collections::BTreeMap;
 
 #[derive(Serialize, Deserialize, Debug)]
-pub enum Kind { Secret, ConfigMap, Node, Deployment, NetworkPolicy }
+pub enum Kind { Secret, ConfigMap, Node, Deployment, NetworkPolicy, Service }
 
 impl Kind {
     pub fn route(&self) -> &'static str {
@@ -27,6 +27,7 @@ impl Kind {
             Kind::Node => "nodes",
             Kind::Deployment => "deployments",
             Kind::NetworkPolicy => "networkpolicies",
+            Kind::Service => "services",
         }
     }
 }
