@@ -3,12 +3,14 @@ mod config_map;
 mod node;
 mod deployment;
 mod network_policy;
+mod pod;
 
 pub use self::secret::*;
 pub use self::config_map::*;
 pub use self::node::*;
 pub use self::deployment::*;
 pub use self::network_policy::*;
+pub use self::pod::*;
 
 use chrono::{DateTime, Utc};
 use serde::Serialize;
@@ -17,16 +19,17 @@ use std::fmt;
 use std::collections::BTreeMap;
 
 #[derive(Serialize, Deserialize, Debug)]
-pub enum Kind { Secret, ConfigMap, Node, Deployment, NetworkPolicy, Service }
+pub enum Kind { Deployment, ConfigMap, NetworkPolicy, Node, Pod, Secret, Service }
 
 impl Kind {
     pub fn route(&self) -> &'static str {
         match *self {
-            Kind::Secret => "secrets",
             Kind::ConfigMap => "configmaps",
-            Kind::Node => "nodes",
             Kind::Deployment => "deployments",
             Kind::NetworkPolicy => "networkpolicies",
+            Kind::Node => "nodes",
+            Kind::Pod => "pods",
+            Kind::Secret => "secrets",
             Kind::Service => "services",
         }
     }
