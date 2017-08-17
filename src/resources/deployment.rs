@@ -1,27 +1,45 @@
 use super::*;
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Node {
-    spec: NodeSpec,
-    metadata: Metadata,
+pub struct Deployment {
+    pub spec: DeploymentSpec,
+    pub metadata: Metadata,
+    pub status: Option<DeploymentStatus>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
-pub struct NodeSpec {
-    #[serde(rename = "podCIDR")]
-    pod_cidr: Option<String>,
-    #[serde(rename = "providerID")]
-    provider_id: Option<String>,
+#[serde(rename_all = "camelCase")]
+pub struct DeploymentSpec {
+    pub min_ready_seconds: Option<u32>,
+    pub paused: Option<bool>,
+    pub progress_deadline_seconds: Option<u32>,
+    pub replicas: Option<u32>,
+    pub revision_history_limit: Option<u32>,
+    // pub rollback_to: Option<RollbackConfig>,
+    // pub selector: Option<LabelSelector>,
+    // pub strategy: Option<DeploymentStrategy>,
+    // pub template: Option<PodTemplateSpec>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
-pub struct NodeList {
-    items: Vec<Node>,
+#[serde(rename_all = "camelCase")]
+pub struct DeploymentStatus {
+    pub available_replicas: u32,
+    // pub conditions: DeploymentCondition,
+    pub observed_generation: u32,
+    pub replicas: u32,
+    pub unavailable_replicas: u32,
+    pub updated_replicas: u32,
+}
+
+#[derive(Serialize, Deserialize, Debug, Default)]
+pub struct DeploymentList {
+    items: Vec<Deployment>,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug, Default)]
 #[serde(rename_all = "camelCase")]
-pub struct NodeListQuery {
+pub struct DeploymentListQuery {
     #[serde(skip_serializing_if = "Option::is_none")]
     field_selector: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -32,7 +50,7 @@ pub struct NodeListQuery {
     timeout_seconds: Option<String>,
 }
 
-impl NodeListQuery {
+impl DeploymentListQuery {
     pub fn field_selector<S: Into<String>>(&self, field_selector: S) -> Self {
         let mut new = self.clone();
         new.field_selector = Some(field_selector.into());
@@ -55,24 +73,24 @@ impl NodeListQuery {
     }
 }
 
-impl Node {
-    pub fn new(name: &str) -> Node {
-        let spec = NodeSpec::default();
+impl Deployment {
+    pub fn new(name: &str) -> Deployment {
+        let spec = DeploymentSpec::default();
         let metadata = Metadata{ name: Some(name.to_owned()), ..Default::default() };
-        Node { spec, metadata }
+        Deployment { spec, metadata, status: None }
     }
 }
 
-impl Resource for Node {
-    fn kind() -> Kind { Kind::Node }
-    fn default_namespace() -> Option<&'static str> {
-        None
+impl Resource for Deployment {
+    fn kind() -> Kind { Kind::Deployment }
+    fn api() -> &'static str {
+        "/apis/extensions/v1beta1"
     }
 }
 
-impl ListableResource for Node {
-    type QueryParams = NodeListQuery;
-    type ListResponse = NodeList;
+impl ListableResource for Deployment {
+    type QueryParams = DeploymentListQuery;
+    type ListResponse = DeploymentList;
     fn list_items(response: Self::ListResponse) -> Vec<Self> {
         response.items
     }

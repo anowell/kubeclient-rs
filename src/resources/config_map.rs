@@ -10,7 +10,7 @@ pub struct ConfigMap {
 impl ConfigMap {
     pub fn new(name: &str) -> ConfigMap {
         let data = BTreeMap::new();
-        let metadata = Metadata{ name: name.to_owned(), ..Default::default() };
+        let metadata = Metadata{ name: Some(name.to_owned()), ..Default::default() };
         ConfigMap { data, metadata }
     }
 

@@ -10,6 +10,7 @@ extern crate serde;
 extern crate serde_yaml;
 extern crate url;
 extern crate url_serde;
+extern crate walkdir;
 
 pub mod errors;
 pub mod config;

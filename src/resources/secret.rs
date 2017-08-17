@@ -11,7 +11,7 @@ pub struct Secret {
 impl Secret {
     pub fn new(name: &str) -> Secret {
         let data = BTreeMap::new();
-        let metadata = Metadata{ name: name.to_owned(), ..Default::default() };
+        let metadata = Metadata{ name: Some(name.to_owned()), ..Default::default() };
         Secret { data, metadata }
     }
 
