@@ -17,6 +17,7 @@ use serde::Serialize;
 use serde::de::DeserializeOwned;
 use std::fmt;
 use std::collections::BTreeMap;
+use std::borrow::Borrow;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum Kind { Deployment, ConfigMap, NetworkPolicy, Node, Pod, Secret, Service }
@@ -83,7 +84,7 @@ pub struct Metadata {
 #[serde(rename_all = "camelCase")]
 pub struct ListQuery {
     #[serde(skip_serializing_if = "Option::is_none")]
-    field_selector: Option<String>,
+    field_selector: Option<BTreeMap<String, String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     label_selector: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -93,10 +94,25 @@ pub struct ListQuery {
 }
 
 impl ListQuery {
-    pub fn field_selector<S: Into<String>>(&self, field_selector: S) -> Self {
-        let mut new = self.clone();
-        new.field_selector = Some(field_selector.into());
-        new
+    pub fn field_selector<B, K, V>(mut self, field_selector: B) -> Self
+    where
+        B: Borrow<(K, V)>,
+        K: AsRef<str>,
+        V: AsRef<str>,
+    {
+        let f = field_selector.borrow();
+        let (k, v) = (f.0.as_ref(), f.1.as_ref());
+        match self.field_selector {
+            Some(ref mut m) => {
+                m.insert(k.to_owned(), v.to_owned());
+            }
+            None => {
+                let mut m = BTreeMap::new();
+                m.insert(k.to_owned(), v.to_owned());
+                self.field_selector = Some(m);
+            }
+        }
+        self
     }
     pub fn label_selector<S: Into<String>>(&self, label_selector: S) -> Self {
         let mut new = self.clone();
