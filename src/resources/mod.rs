@@ -2,21 +2,22 @@ mod secret;
 mod config_map;
 mod node;
 mod deployment;
+mod network_policy;
 
 pub use self::secret::*;
 pub use self::config_map::*;
 pub use self::node::*;
 pub use self::deployment::*;
+pub use self::network_policy::*;
 
 use chrono::{DateTime, Utc};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use std::fmt;
 use std::collections::BTreeMap;
-// use std::str::FromStr;
 
 #[derive(Serialize, Deserialize, Debug)]
-pub enum Kind { Secret, ConfigMap, Node, Deployment }
+pub enum Kind { Secret, ConfigMap, Node, Deployment, NetworkPolicy }
 
 impl Kind {
     pub fn route(&self) -> &'static str {
@@ -25,22 +26,10 @@ impl Kind {
             Kind::ConfigMap => "configmaps",
             Kind::Node => "nodes",
             Kind::Deployment => "deployments",
+            Kind::NetworkPolicy => "networkpolicies",
         }
     }
 }
-
-// impl FromStr for Kind {
-//     type Err = String;
-//     fn from_str(s: &str) -> Result<Self, Self::Err> {
-//         match s {
-//             "Secret" => Ok(Kind::Secret),
-//             "ConfigMap" => Ok(Kind::ConfigMap),
-//             "Node" => Ok(Kind::Node),
-//             "Deployment" => Ok(Kind::Deployment),
-//             _ => Err(format!("Unsupported kind '{}'", s)),
-//         }
-//     }
-// }
 
 // Debug output of Kind is exactly what we want for Display
 impl fmt::Display for Kind {
