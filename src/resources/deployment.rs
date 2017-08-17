@@ -24,8 +24,7 @@ pub struct DeploymentSpec {
 #[derive(Serialize, Deserialize, Debug, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct DeploymentStatus {
-    pub available_replicas: u32,
-    // pub conditions: DeploymentCondition,
+    // pub conditions: Option<Vec<DeploymentCondition>>,
     pub observed_generation: u32,
     pub replicas: u32,
     pub unavailable_replicas: u32,
