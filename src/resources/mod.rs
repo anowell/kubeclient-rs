@@ -4,6 +4,7 @@ mod node;
 mod deployment;
 mod network_policy;
 mod pod;
+mod service;
 
 pub use self::secret::*;
 pub use self::config_map::*;
@@ -11,6 +12,7 @@ pub use self::node::*;
 pub use self::deployment::*;
 pub use self::network_policy::*;
 pub use self::pod::*;
+pub use self::service::*;
 
 use chrono::{DateTime, Utc};
 use serde::Serialize;

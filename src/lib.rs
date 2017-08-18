@@ -14,9 +14,13 @@ extern crate walkdir;
 
 pub mod errors;
 pub mod config;
-pub mod client;
+pub mod clients;
 pub mod resources;
 
-pub use client::KubeClient;
+pub mod prelude {
+    pub use clients::{Kubernetes, ReadClient, WriteClient, ListClient};
+}
+
+pub use clients::Kubernetes;
 pub use config::KubeConfig;
 pub use errors::Error;

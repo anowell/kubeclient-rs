@@ -1,7 +1,7 @@
 use reqwest::{self, StatusCode};
 use std::path::Path;
 use config::KubeConfig;
-use resources::{Kind, Resource, Metadata, ListableResource, ListQuery, Status};
+use resources::*;
 use std::fs::File;
 use std::io::Read;
 use openssl::pkcs12::Pkcs12;
@@ -10,97 +10,12 @@ use serde::de::DeserializeOwned;
 use serde_json::{self, Value};
 use serde_yaml;
 use url::Url;
-use std::collections::BTreeMap;
 use std::borrow::Borrow;
 use walkdir::WalkDir;
 use errors::*;
 
-pub struct KubeClient {
-    kube: KubeClientLowLevel,
-    namespace: Option<String>,
-}
-
-impl KubeClient {
-    pub fn from_conf<P: AsRef<Path>>(path: P) -> Result<KubeClient> {
-        Ok(KubeClient{
-            kube: KubeClientLowLevel::from_conf(path)?,
-            namespace: None,
-        })
-    }
-
-    pub fn low_level(&self) -> &KubeClientLowLevel {
-        &self.kube
-    }
-
-    pub fn namespace(&self, namespace: &str) -> KubeClient {
-        KubeClient { kube: self.kube.clone(), namespace: Some(namespace.to_owned()) }
-    }
-
-    pub fn healthy(&self) -> Result<bool> {
-        Ok(self.kube.health()? == "ok")
-    }
-
-    pub fn apply_path<P: AsRef<Path>>(&self, path: P) -> Result<()> {
-        let _: Vec<Value> = self.kube.apply_path(path)?;
-        Ok(())
-    }
-
-    pub fn exists<R: Resource>(&self, name: &str) -> Result<bool> {
-        let mut route = ResourceRoute::new(R::api(), R::kind().route(), name);
-        if let Some(ns) = self.get_ns::<R>() {
-            route.namespace(ns);
-        }
-        self.kube.exists(&route)
-    }
-
-    pub fn get<R: Resource>(&self, name: &str) -> Result<R> {
-        let mut route = ResourceRoute::new(R::api(), R::kind().route(), name);
-        if let Some(ns) = self.get_ns::<R>() {
-            route.namespace(ns);
-        }
-        self.kube.get(&route)
-    }
-
-    pub fn list<R: ListableResource>(&self, query: Option<&ListQuery>) -> Result<Vec<R>> {
-        let mut route = KindRoute::new(R::api(), R::kind().route());
-        if let Some(ns) = self.get_ns::<R>() {
-            route.namespace(ns);
-        }
-        if let Some(query) = query {
-            let json = serde_json::to_string(&query)?;
-            let map: BTreeMap<String,String> = serde_json::from_str(&json)?;
-            route.query(map);
-        }
-        let response: R::ListResponse = self.kube.list(&route)?;
-        Ok(R::list_items(response))
-    }
-
-    pub fn create<R: Resource>(&self, resource: &R) -> Result<R> {
-        let mut route = KindRoute::new(R::api(), R::kind().route());
-        if let Some(ns) = self.get_ns::<R>() {
-            route.namespace(ns);
-        }
-        self.kube.apply(&route, resource)
-    }
-
-    pub fn delete<R: Resource>(&self, name: &str) -> Result<()> {
-        let mut route = ResourceRoute::new(R::api(), R::kind().route(), name);
-        if let Some(ns) = self.get_ns::<R>() {
-            route.namespace(ns);
-        }
-        self.kube.delete(&route)
-    }
-
-    fn get_ns<'a, R: Resource>(&'a self) -> Option<&'a str> {
-        match self.namespace {
-            Some(ref ns) => Some(ns),
-            None => R::default_namespace(),
-        }
-    }
-}
-
 #[derive(Clone)]
-pub struct KubeClientLowLevel {
+pub struct KubeLowLevel {
     client: reqwest::Client,
     base_url: Url,
 }
@@ -114,8 +29,8 @@ struct MinimalResource {
     metadata: Metadata,
 }
 
-impl KubeClientLowLevel {
-    pub fn from_conf<P: AsRef<Path>>(path: P) -> Result<KubeClientLowLevel> {
+impl KubeLowLevel {
+    pub fn load_conf<P: AsRef<Path>>(path: P) -> Result<KubeLowLevel> {
         let kubeconfig = KubeConfig::load(path)?;
         let context = kubeconfig.default_context()?;
         let auth_info = context.user;
@@ -144,7 +59,7 @@ impl KubeClientLowLevel {
             .build()
             .chain_err(|| "Failed to build reqwest client")?;
 
-        Ok(KubeClientLowLevel { client, base_url: cluster.server })
+        Ok(KubeLowLevel { client, base_url: cluster.server })
     }
 
     pub fn health(&self) -> Result<String> {
@@ -239,7 +154,7 @@ impl KubeClientLowLevel {
         let (mini, body): (MinimalResource, Value) = match &*format.to_lowercase() {
             "json" => (serde_json::from_slice(&bytes)?, serde_json::from_slice(&bytes)?),
             "yaml" => (serde_yaml::from_slice(&bytes)?, serde_yaml::from_slice(&bytes)?),
-            _ => unreachable!("kubeclient bug: unexpected and unfiltered file extension"),
+            _ => unreachable!("Kubernetes bug: unexpected and unfiltered file extension"),
         };
         let root = if mini.api_version.starts_with("v") {
             "/api"
@@ -267,7 +182,7 @@ impl KubeClientLowLevel {
     // Low-level
     //
 
-    fn http_get(&self, url: Url) -> Result<reqwest::Response> {
+    pub(crate) fn http_get(&self, url: Url) -> Result<reqwest::Response> {
         let mut req = self.client.get(url)?;
 
         let mut response = req.send().chain_err(|| "Failed to GET URL")?;
@@ -280,12 +195,12 @@ impl KubeClientLowLevel {
         Ok(response)
     }
 
-    fn http_get_json<D: DeserializeOwned>(&self, url: Url) -> Result<D> {
+    pub(crate) fn http_get_json<D: DeserializeOwned>(&self, url: Url) -> Result<D> {
         let mut response = self.http_get(url)?;
         Ok(response.json().chain_err(|| "Failed to decode JSON response")?)
     }
 
-    fn http_post_json<S, D>(&self, url: Url, body: &S) -> Result<D>
+    pub(crate) fn http_post_json<S, D>(&self, url: Url, body: &S) -> Result<D>
     where S: Serialize,
           D: DeserializeOwned,
     {
@@ -303,7 +218,7 @@ impl KubeClientLowLevel {
         Ok(response.json().chain_err(|| "Failed to decode JSON response")?)
     }
 
-    fn http_delete(&self, url: Url) -> Result<reqwest::Response> {
+    pub(crate) fn http_delete(&self, url: Url) -> Result<reqwest::Response> {
         let mut response = self.client.delete(url)?
             .send()
             .chain_err(|| "Failed to DELETE URL")?;

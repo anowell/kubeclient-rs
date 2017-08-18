@@ -1,4 +1,5 @@
 use super::*;
+use serde_json::Value;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Service {
@@ -20,7 +21,8 @@ pub struct ServiceSpec {
     pub ports: Option<Vec<Value>>, // TODO: ServicePort type
     pub selector: Option<BTreeMap<String, String>>,
     pub session_affinity: Option<String>,
-    pub type: Option<String>,
+    #[serde(rename = "type")]
+    pub service_type: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]

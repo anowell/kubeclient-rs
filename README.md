@@ -8,18 +8,17 @@ but I'm open to discussion, so please file an issue if you have any thoughts.
 For now, using it feels about like this:
 
 ```rust
-use kubeclient::KubeClient;
-use kubeclient::resources::{Secret, Node};
+use kubeclient::prelude::*;
 
-let kube = KubeClient::new("admin.conf");
+let kube = Kubernetes::new("admin.conf");
 
 if kube.healthy()? {
-  if !kube.exists::<Secret>("my-secret")? {
-    let output: Secret = kube.get("my-secret")?
+  if !kube.secrets().exists("my-secret")? {
+    let output = kube.secrets().get("my-secret")?
     // ...
   }
 
-  for node in kube.list::<Node>()? {
+  for node in kube.nodes().list()? {
     println!("Found node: {}", node.metadata.name);
   }
 }
