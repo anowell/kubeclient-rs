@@ -10,7 +10,7 @@ For now, using it feels about like this:
 ```rust
 use kubeclient::prelude::*;
 
-let kube = Kubernetes::new("admin.conf");
+let kube = Kubernetes::load_conf("admin.conf")?;
 
 if kube.healthy()? {
   if !kube.secrets().exists("my-secret")? {
