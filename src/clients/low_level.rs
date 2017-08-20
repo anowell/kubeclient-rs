@@ -138,41 +138,61 @@ impl KubeLowLevel {
                 false
             })
             .map(|entry| {
-                let file = File::open(entry.path())?;
-                let ext = entry.path().extension().unwrap().to_string_lossy();
-                self.apply_file(file, &ext)
+                self.apply_file(entry.path())
                     .chain_err(|| format!("Failed to apply {}", entry.path().display()))
             })
             .collect()
     }
 
-    // TODO: make format enum of Json/Yaml
-    fn apply_file<D>(&self, mut file: File, format: &str) -> Result<D>
+    // TODO: This function could use a serious refactoring
+    fn apply_file<D>(&self, path: &Path) -> Result<D>
     where D: DeserializeOwned + ::std::fmt::Debug
     {
         let mut bytes = Vec::new();
+        let ext = path.extension().unwrap().to_string_lossy().to_lowercase();
+        let mut file = File::open(path)?;
         file.read_to_end(&mut bytes)?;
-        // FIXME: don't double deserialize. use json pointers to extract fields (and improve errors when missing fields)
-        let (mini, body): (MinimalResource, Value) = match &*format.to_lowercase() {
-            "json" => (serde_json::from_slice(&bytes)?, serde_json::from_slice(&bytes)?),
-            "yaml" => (serde_yaml::from_slice(&bytes)?, serde_yaml::from_slice(&bytes)?),
+        let body: Value = match &*ext {
+            "json" => serde_json::from_slice(&bytes)?,
+            "yaml" => serde_yaml::from_slice(&bytes)?,
             _ => unreachable!("kubeclient bug: unexpected and unfiltered file extension"),
         };
+        let mini: MinimalResource = serde_json::from_value(body.clone())?;
+
         let root = if mini.api_version.starts_with("v") {
             "/api"
         } else {
             "/apis"
         };
-        let url = match mini.metadata.namespace {
-            Some(ns) => self.base_url.join(
-                &format!("{}/{}/namespaces/{}/{}", root, mini.api_version, ns, mini.kind.route())
-            )?,
-            None => self.base_url.join(
-                &format!("{}/{}/{}", root, mini.api_version, mini.kind.route())
-            )?,
+        let name = mini.metadata.name.expect("must set metadata.name to apply kubernetes resource");
+        let kind_path = match mini.metadata.namespace {
+            Some(ns) => format!("{}/{}/namespaces/{}/{}", root, mini.api_version, ns, mini.kind.route()),
+            None =>format!("{}/{}/{}", root, mini.api_version, mini.kind.route()),
         };
-        let resp = self.http_post_json(url, &body)?;
-        Ok(resp)
+        let kind_url = self.base_url.join(&kind_path)?;
+        let resource_url = self.base_url.join(&format!("{}/{}", kind_path, name))?;
+
+        // First check if resource already exists
+        let mut response = self.client.get(resource_url)?.send()
+            .chain_err(|| "Failed to GET URL")?;
+        match response.status() {
+            // Apply if resource doesn't exist
+            StatusCode::NotFound => {
+                let resp = self.http_post_json(kind_url, &body)?;
+                Ok(resp)
+            }
+            // Return it if it already exists
+            s if s.is_success() => {
+                let resp = response.json().chain_err(|| "Failed to decode JSON response")?;
+                Ok(resp)
+            }
+            // Propogate any other error
+            _ => {
+                let status: Status = response.json()
+                    .chain_err(|| "Failed to decode error response as 'Status'")?;
+                bail!(status.message);
+            }
+        }
     }
 
     fn replace_file<D>(&self, mut file: File, format: &str) -> Result<D>
