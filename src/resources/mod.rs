@@ -1,6 +1,7 @@
 mod secret;
 mod config_map;
 mod node;
+mod daemon_set;
 mod deployment;
 mod network_policy;
 mod pod;
@@ -9,6 +10,7 @@ mod service;
 pub use self::secret::*;
 pub use self::config_map::*;
 pub use self::node::*;
+pub use self::daemon_set::*;
 pub use self::deployment::*;
 pub use self::network_policy::*;
 pub use self::pod::*;
@@ -21,12 +23,13 @@ use std::fmt;
 use std::collections::BTreeMap;
 
 #[derive(Serialize, Deserialize, Debug)]
-pub enum Kind { Deployment, ConfigMap, NetworkPolicy, Node, Pod, Secret, Service }
+pub enum Kind { DaemonSet, Deployment, ConfigMap, NetworkPolicy, Node, Pod, Secret, Service }
 
 impl Kind {
     pub fn route(&self) -> &'static str {
         match *self {
             Kind::ConfigMap => "configmaps",
+            Kind::DaemonSet => "daemonsets",
             Kind::Deployment => "deployments",
             Kind::NetworkPolicy => "networkpolicies",
             Kind::Node => "nodes",

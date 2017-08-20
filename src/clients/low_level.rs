@@ -141,6 +141,7 @@ impl KubeLowLevel {
                 let file = File::open(entry.path())?;
                 let ext = entry.path().extension().unwrap().to_string_lossy();
                 self.apply_file(file, &ext)
+                    .chain_err(|| format!("Failed to apply {}", entry.path().display()))
             })
             .collect()
     }
