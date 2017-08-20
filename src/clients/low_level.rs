@@ -16,8 +16,8 @@ use errors::*;
 
 #[derive(Clone)]
 pub struct KubeLowLevel {
-    client: reqwest::Client,
-    base_url: Url,
+    pub(crate) client: reqwest::Client,
+    pub(crate) base_url: Url,
 }
 
 // This is only used for figuring out the API endpoint to use
@@ -146,15 +146,16 @@ impl KubeLowLevel {
     }
 
     // TODO: make format enum of Json/Yaml
-    pub fn apply_file<D>(&self, mut file: File, format: &str) -> Result<D>
+    fn apply_file<D>(&self, mut file: File, format: &str) -> Result<D>
     where D: DeserializeOwned + ::std::fmt::Debug
     {
         let mut bytes = Vec::new();
         file.read_to_end(&mut bytes)?;
+        // FIXME: don't double deserialize. use json pointers to extract fields (and improve errors when missing fields)
         let (mini, body): (MinimalResource, Value) = match &*format.to_lowercase() {
             "json" => (serde_json::from_slice(&bytes)?, serde_json::from_slice(&bytes)?),
             "yaml" => (serde_yaml::from_slice(&bytes)?, serde_yaml::from_slice(&bytes)?),
-            _ => unreachable!("Kubernetes bug: unexpected and unfiltered file extension"),
+            _ => unreachable!("kubeclient bug: unexpected and unfiltered file extension"),
         };
         let root = if mini.api_version.starts_with("v") {
             "/api"
@@ -170,6 +171,35 @@ impl KubeLowLevel {
             )?,
         };
         let resp = self.http_post_json(url, &body)?;
+        Ok(resp)
+    }
+
+    fn replace_file<D>(&self, mut file: File, format: &str) -> Result<D>
+    where D: DeserializeOwned + ::std::fmt::Debug
+    {
+        let mut bytes = Vec::new();
+        file.read_to_end(&mut bytes)?;
+        // FIXME: don't double deserialize. use json pointers to extract fields (and improve errors when missing fields)
+        let (mini, body): (MinimalResource, Value) = match &*format.to_lowercase() {
+            "json" => (serde_json::from_slice(&bytes)?, serde_json::from_slice(&bytes)?),
+            "yaml" => (serde_yaml::from_slice(&bytes)?, serde_yaml::from_slice(&bytes)?),
+            _ => unreachable!("kubeclient bug: unexpected and unfiltered file extension"),
+        };
+        let root = if mini.api_version.starts_with("v") {
+            "/api"
+        } else {
+            "/apis"
+        };
+        let name = mini.metadata.name.expect("must set metadata.name to replace kubernetes resource");
+        let url = match mini.metadata.namespace {
+            Some(ns) => self.base_url.join(
+                &format!("{}/{}/namespaces/{}/{}/{}", root, mini.api_version, ns, mini.kind.route(), name)
+            )?,
+            None => self.base_url.join(
+                &format!("{}/{}/{}/{}", root, mini.api_version, mini.kind.route(), name)
+            )?,
+        };
+        let resp = self.http_put_json(url, &body)?;
         Ok(resp)
     }
 
@@ -208,6 +238,24 @@ impl KubeLowLevel {
             .json(&body).expect("JSON serialization failed")
             .send()
             .chain_err(|| "Failed to POST URL")?;
+
+        if !response.status().is_success() {
+            let status: Status = response.json()
+                .chain_err(|| "Failed to decode kubernetes error response as 'Status'")?;
+            bail!(format!("Kubernetes API error: {}", status.message));
+        }
+
+        Ok(response.json().chain_err(|| "Failed to decode JSON response")?)
+    }
+
+    pub(crate) fn http_put_json<S, D>(&self, url: Url, body: &S) -> Result<D>
+    where S: Serialize,
+          D: DeserializeOwned,
+    {
+        let mut response = self.client.put(url)?
+            .json(&body).expect("JSON serialization failed")
+            .send()
+            .chain_err(|| "Failed to PUT URL")?;
 
         if !response.status().is_success() {
             let status: Status = response.json()
@@ -329,7 +377,7 @@ impl<'a> ResourceRoute<'a> {
         self
     }
 
-    fn build(&self, base_url: &Url) -> Result<Url> {
+    pub(crate) fn build(&self, base_url: &Url) -> Result<Url> {
         let path = match self.namespace {
             Some(ns) => format!("{}/namespaces/{}/{}/{}", self.api, ns, self.kind, self.resource),
             None => format!("{}/{}/{}", self.api, self.kind, self.resource),

@@ -6,15 +6,14 @@ use self::low_level::*;
 
 use std::path::Path;
 use resources::*;
-use serde_json::{self, Value};
-use std::collections::BTreeMap;
+use serde_json::Value;
 use errors::*;
 use std::marker::PhantomData;
 
 
 #[derive(Clone)]
 pub struct Kubernetes {
-    low_level: KubeLowLevel,
+    pub(crate) low_level: KubeLowLevel,
     namespace: Option<String>,
 }
 
@@ -90,9 +89,7 @@ impl Kubernetes {
             route.namespace(ns);
         }
         if let Some(query) = query {
-            let json = serde_json::to_string(&query)?;
-            let map: BTreeMap<String,String> = serde_json::from_str(&json)?;
-            route.query(map);
+            route.query(query.as_query_pairs());
         }
         let response: R::ListResponse = self.low_level.list(&route)?;
         Ok(R::list_items(response))

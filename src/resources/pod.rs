@@ -53,6 +53,48 @@ pub struct PodList {
     items: Vec<Pod>,
 }
 
+#[derive(Serialize, Debug, Default)]
+pub struct PodExec {
+    stdin: Option<bool>,
+    stdout: Option<bool>,
+    stderr: Option<bool>,
+    tty: Option<bool>,
+    container: Option<String>,
+    command: Option<Vec<String>>,
+}
+
+impl PodExec {
+    pub fn tty(mut self) -> PodExec {
+        self.tty = Some(true);
+        self
+    }
+
+    pub fn command(mut self, command: Vec<String>) -> PodExec {
+        self.command = Some(command);
+        self
+    }
+
+    pub fn as_query_pairs(&self) -> BTreeMap<&'static str, String> {
+        let mut query = BTreeMap::new();
+        if let Some(stdin) = self.stdin {
+            query.insert("stdin", stdin.to_string());
+        }
+        if let Some(stdout) = self.stdout {
+            query.insert("stdout", stdout.to_string());
+        }
+        if let Some(tty) = self.tty {
+            query.insert("tty", tty.to_string());
+        }
+        if let Some(ref container) = self.container {
+            query.insert("container", container.to_owned());
+        }
+        if let Some(ref command) = self.command {
+            query.insert("command", command.join(" "));
+        }
+        query
+    }
+}
+
 impl Pod {
     pub fn new(name: &str) -> Pod {
         let spec = PodSpec::default();

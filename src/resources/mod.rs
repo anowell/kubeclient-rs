@@ -19,7 +19,6 @@ use serde::Serialize;
 use serde::de::DeserializeOwned;
 use std::fmt;
 use std::collections::BTreeMap;
-use std::borrow::Borrow;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum Kind { Deployment, ConfigMap, NetworkPolicy, Node, Pod, Secret, Service }
@@ -82,40 +81,38 @@ pub struct Metadata {
     pub labels: Option<BTreeMap<String, String>>,
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug, Default)]
-#[serde(rename_all = "camelCase")]
+#[derive(Clone, Debug, Default)]
 pub struct ListQuery {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    field_selector: Option<BTreeMap<String, String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    field_selector: Option<String>,
     label_selector: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     resource_version: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     timeout_seconds: Option<String>,
 }
 
 impl ListQuery {
-    pub fn field_selector<B, K, V>(mut self, field_selector: B) -> Self
-    where
-        B: Borrow<(K, V)>,
-        K: AsRef<str>,
-        V: AsRef<str>,
-    {
-        let f = field_selector.borrow();
-        let (k, v) = (f.0.as_ref(), f.1.as_ref());
-        match self.field_selector {
-            Some(ref mut m) => {
-                m.insert(k.to_owned(), v.to_owned());
-            }
-            None => {
-                let mut m = BTreeMap::new();
-                m.insert(k.to_owned(), v.to_owned());
-                self.field_selector = Some(m);
-            }
+    pub fn as_query_pairs(&self) -> BTreeMap<&str, String> {
+        let mut map = BTreeMap::new();
+        if let Some(ref fs) = self.field_selector {
+            map.insert("fieldSelector", fs.to_owned());
         }
+        if let Some(ref ls) = self.label_selector {
+            map.insert("labelSelector", ls.to_owned());
+        }
+        if let Some(ref rv) = self.resource_version {
+            map.insert("resourceVersion", rv.to_owned());
+        }
+        if let Some(ref ts) = self.timeout_seconds {
+            map.insert("timeoutSeconds", ts.to_owned());
+        }
+        map
+    }
+
+    /// Be aware of: https://github.com/kubernetes/kubernetes/issues/1362
+    pub fn field_selector<S: Into<String>>(mut self, field_selector: S) -> Self {
+        self.field_selector = Some(field_selector.into());
         self
     }
+
     pub fn label_selector<S: Into<String>>(&self, label_selector: S) -> Self {
         let mut new = self.clone();
         new.label_selector = Some(label_selector.into());

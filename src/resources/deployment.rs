@@ -32,6 +32,32 @@ pub struct DeploymentStatus {
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct Scale {
+    pub spec: ScaleSpec,
+    pub metadata: Metadata,
+    // pub status: Option<ScaleStatus>,
+}
+
+impl Scale {
+    pub(crate) fn replicas(namespace: &str, name: &str, count: u32) -> Scale {
+        Scale {
+            spec: ScaleSpec { replicas: count },
+            metadata: Metadata {
+                name: Some(name.to_owned()),
+                namespace: Some(namespace.to_owned()),
+                ..Default::default() }
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct ScaleSpec {
+    pub replicas: u32,
+}
+
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct DeploymentList {
     items: Vec<Deployment>,
 }
