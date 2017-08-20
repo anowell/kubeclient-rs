@@ -1,7 +1,11 @@
 The beginnings of a Rust kubernetes client
 
-This is highly targeted at my specific usecase right now, and will probably break with every change for now,
-but I'm open to discussion, so please file an issue if you have any thoughts.
+It's still very experimental and rough aruond the edges.
+It has basic support for many common operations, but is far from complete.
+An documentation is still very lacking.
+
+If there is a specific API you need feel free to open an issue and I might try to bump it up in priority.
+Alternatively, consider submitting a PR.
 
 ## Usage
 
