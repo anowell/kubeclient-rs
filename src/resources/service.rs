@@ -1,6 +1,12 @@
 use super::*;
 use serde_json::Value;
 
+pub(crate) static SERVICE_INFO: KindInfo = KindInfo {
+    plural: "services",
+    default_namespace: Some("default"),
+    api: V1_API,
+};
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Service {
     pub spec: ServiceSpec,

@@ -68,7 +68,7 @@ impl Kubernetes {
     }
 
     fn exists<R: Resource>(&self, name: &str) -> Result<bool> {
-        let mut route = ResourceRoute::new(R::api(), R::kind().route(), name);
+        let mut route = ResourceRoute::new(R::api(), R::kind().plural, name);
         if let Some(ns) = self.get_ns::<R>() {
             route.namespace(ns);
         }
@@ -76,7 +76,7 @@ impl Kubernetes {
     }
 
     fn get<R: Resource>(&self, name: &str) -> Result<R> {
-        let mut route = ResourceRoute::new(R::api(), R::kind().route(), name);
+        let mut route = ResourceRoute::new(R::api(), R::kind().plural, name);
         if let Some(ns) = self.get_ns::<R>() {
             route.namespace(ns);
         }
@@ -84,7 +84,7 @@ impl Kubernetes {
     }
 
     fn list<R: ListableResource>(&self, query: Option<&ListQuery>) -> Result<Vec<R>> {
-        let mut route = KindRoute::new(R::api(), R::kind().route());
+        let mut route = KindRoute::new(R::api(), R::kind().plural);
         if let Some(ns) = self.get_ns::<R>() {
             route.namespace(ns);
         }
@@ -96,7 +96,7 @@ impl Kubernetes {
     }
 
     pub fn create<R: Resource>(&self, resource: &R) -> Result<R> {
-        let mut route = KindRoute::new(R::api(), R::kind().route());
+        let mut route = KindRoute::new(R::api(), R::kind().plural);
         if let Some(ns) = self.get_ns::<R>() {
             route.namespace(ns);
         }
@@ -104,7 +104,7 @@ impl Kubernetes {
     }
 
     fn delete<R: Resource>(&self, name: &str) -> Result<()> {
-        let mut route = ResourceRoute::new(R::api(), R::kind().route(), name);
+        let mut route = ResourceRoute::new(R::api(), R::kind().plural, name);
         if let Some(ns) = self.get_ns::<R>() {
             route.namespace(ns);
         }

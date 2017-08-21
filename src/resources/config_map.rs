@@ -1,6 +1,12 @@
 use super::*;
 use std::collections::BTreeMap;
 
+pub(crate) static CONFIG_MAP_INFO: KindInfo = KindInfo {
+    plural: "configmaps",
+    default_namespace: Some("default"),
+    api: V1_API,
+};
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ConfigMap {
     data: BTreeMap<String, String>,

@@ -39,7 +39,7 @@ impl<R> KubeClient<R> {
 impl KubeClient<Deployment> {
     pub fn scale(&self, deployment_name: &str, count: u32) -> Result<Scale> {
         let resource = format!("{}/scale", deployment_name);
-        let mut route = ResourceRoute::new(Deployment::api(), Deployment::kind().route(), &resource);
+        let mut route = ResourceRoute::new(Deployment::api(), Deployment::kind().plural, &resource);
         let ns = self.kube.get_ns::<Deployment>().expect("Namespace necessary for kubernetes scale operation");
         route.namespace(ns);
 

@@ -1,5 +1,11 @@
 use super::*;
 
+pub(crate) static DEPLOYMENT_INFO: KindInfo = KindInfo {
+    plural: "deployments",
+    default_namespace: Some("default"),
+    api: V1_BETA_API,
+};
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Deployment {
     pub spec: DeploymentSpec,
@@ -72,9 +78,6 @@ impl Deployment {
 
 impl Resource for Deployment {
     fn kind() -> Kind { Kind::Deployment }
-    fn api() -> &'static str {
-        "/apis/extensions/v1beta1"
-    }
 }
 
 impl ListableResource for Deployment {

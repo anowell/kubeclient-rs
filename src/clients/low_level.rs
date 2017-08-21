@@ -165,9 +165,9 @@ impl KubeLowLevel {
             "/apis"
         };
         let name = mini.metadata.name.expect("must set metadata.name to apply kubernetes resource");
-        let kind_path = match mini.metadata.namespace {
-            Some(ns) => format!("{}/{}/namespaces/{}/{}", root, mini.api_version, ns, mini.kind.route()),
-            None =>format!("{}/{}/{}", root, mini.api_version, mini.kind.route()),
+        let kind_path = match mini.metadata.namespace.as_ref().map(|x| &**x).borrow().or(mini.kind.default_namespace) {
+            Some(ns) => format!("{}/{}/namespaces/{}/{}", root, mini.api_version, ns, mini.kind.plural),
+            None =>format!("{}/{}/{}", root, mini.api_version, mini.kind.plural),
         };
         let kind_url = self.base_url.join(&kind_path)?;
         let resource_url = self.base_url.join(&format!("{}/{}", kind_path, name))?;
@@ -214,10 +214,10 @@ impl KubeLowLevel {
         let name = mini.metadata.name.expect("must set metadata.name to replace kubernetes resource");
         let url = match mini.metadata.namespace {
             Some(ns) => self.base_url.join(
-                &format!("{}/{}/namespaces/{}/{}/{}", root, mini.api_version, ns, mini.kind.route(), name)
+                &format!("{}/{}/namespaces/{}/{}/{}", root, mini.api_version, ns, mini.kind.plural, name)
             )?,
             None => self.base_url.join(
-                &format!("{}/{}/{}/{}", root, mini.api_version, mini.kind.route(), name)
+                &format!("{}/{}/{}/{}", root, mini.api_version, mini.kind.plural, name)
             )?,
         };
         let resp = self.http_put_json(url, &body)?;

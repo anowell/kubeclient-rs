@@ -1,6 +1,12 @@
 use super::*;
 use serde_json::Value;
 
+pub(crate) static DAEMON_SET_INFO: KindInfo = KindInfo {
+    plural: "daemonsets",
+    default_namespace: Some("default"),
+    api: V1_BETA_API,
+};
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct DaemonSet {
     pub spec: DaemonSetSpec,
@@ -39,9 +45,6 @@ impl DaemonSet {
 
 impl Resource for DaemonSet {
     fn kind() -> Kind { Kind::DaemonSet }
-    fn api() -> &'static str {
-        "/apis/extensions/v1beta1"
-    }
 }
 
 impl ListableResource for DaemonSet {

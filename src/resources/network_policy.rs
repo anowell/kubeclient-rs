@@ -1,5 +1,11 @@
 use super::*;
 
+pub(crate) static NETWORK_POLICY_INFO: KindInfo = KindInfo {
+    plural: "networkpolicies",
+    default_namespace: Some("default"),
+    api: V1_BETA_API,
+};
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct NetworkPolicy {
     pub spec: NetworkPolicySpec,
@@ -30,9 +36,6 @@ impl NetworkPolicy {
 
 impl Resource for NetworkPolicy {
     fn kind() -> Kind { Kind::NetworkPolicy }
-    fn api() -> &'static str {
-        "/apis/extensions/v1beta1"
-    }
 }
 
 

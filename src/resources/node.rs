@@ -1,5 +1,11 @@
 use super::*;
 
+pub(crate) static NODE_INFO: KindInfo = KindInfo {
+    plural: "nodes",
+    default_namespace: None,
+    api: V1_API,
+};
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Node {
     spec: NodeSpec,
@@ -29,9 +35,6 @@ impl Node {
 
 impl Resource for Node {
     fn kind() -> Kind { Kind::Node }
-    fn default_namespace() -> Option<&'static str> {
-        None
-    }
 }
 
 impl ListableResource for Node {

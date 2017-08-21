@@ -21,23 +21,35 @@ use serde::Serialize;
 use serde::de::DeserializeOwned;
 use std::fmt;
 use std::collections::BTreeMap;
+use std::ops::Deref;
+
+pub(crate) const V1_API: &str = "/api/v1";
+pub(crate) const V1_BETA_API: &str = "/apis/extensions/v1beta1";
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum Kind { DaemonSet, Deployment, ConfigMap, NetworkPolicy, Node, Pod, Secret, Service }
 
-impl Kind {
-    pub fn route(&self) -> &'static str {
+impl Deref for Kind {
+    type Target = KindInfo;
+    fn deref(&self) -> &KindInfo {
         match *self {
-            Kind::ConfigMap => "configmaps",
-            Kind::DaemonSet => "daemonsets",
-            Kind::Deployment => "deployments",
-            Kind::NetworkPolicy => "networkpolicies",
-            Kind::Node => "nodes",
-            Kind::Pod => "pods",
-            Kind::Secret => "secrets",
-            Kind::Service => "services",
+            Kind::ConfigMap => &CONFIG_MAP_INFO,
+            Kind::DaemonSet => &DAEMON_SET_INFO,
+            Kind::Deployment => &DEPLOYMENT_INFO,
+            Kind::NetworkPolicy => &NETWORK_POLICY_INFO,
+            Kind::Node => &NODE_INFO,
+            Kind::Pod => &POD_INFO,
+            Kind::Secret => &SECRET_INFO,
+            Kind::Service => &SERVICE_INFO,
         }
     }
+}
+
+#[derive(Copy, Clone, Debug)]
+pub struct KindInfo {
+    pub plural: &'static str,
+    pub default_namespace: Option<&'static str>,
+    pub api: &'static str,
 }
 
 // Debug output of Kind is exactly what we want for Display
@@ -49,13 +61,12 @@ impl fmt::Display for Kind {
 
 pub trait Resource: Serialize + DeserializeOwned {
     fn kind() -> Kind;
-    fn default_namespace() -> Option<&'static str> {
-        Some("default")
-    }
     fn api() -> &'static str {
-        "/api/v1"
+        Self::kind().api
     }
-
+    fn default_namespace() -> Option<&'static str> {
+        Self::kind().default_namespace
+    }
 }
 
 pub trait ListableResource: Resource {

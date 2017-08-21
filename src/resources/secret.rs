@@ -2,6 +2,12 @@ use super::*;
 use std::collections::BTreeMap;
 use base64;
 
+pub(crate) static SECRET_INFO: KindInfo = KindInfo {
+    plural: "secretsw",
+    default_namespace: Some("default"),
+    api: V1_API,
+};
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Secret {
     data: BTreeMap<String, String>,

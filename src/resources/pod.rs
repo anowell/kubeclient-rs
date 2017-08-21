@@ -2,6 +2,12 @@ use super::*;
 use std::net::Ipv4Addr;
 use serde_json::Value;
 
+pub(crate) static POD_INFO: KindInfo = KindInfo {
+    plural: "pods",
+    default_namespace: Some("default"),
+    api: V1_API,
+};
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Pod {
     pub spec: PodSpec,
