@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use base64;
 
 pub(crate) static SECRET_INFO: KindInfo = KindInfo {
-    plural: "secretsw",
+    plural: "secrets",
     default_namespace: Some("default"),
     api: V1_API,
 };

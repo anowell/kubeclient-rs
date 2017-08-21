@@ -33,7 +33,7 @@ pub struct DeploymentStatus {
     // pub conditions: Option<Vec<DeploymentCondition>>,
     pub observed_generation: u32,
     pub replicas: u32,
-    pub unavailable_replicas: u32,
+    pub unavailable_replicas: Option<u32>,
     pub updated_replicas: u32,
 }
 
