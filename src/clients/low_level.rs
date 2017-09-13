@@ -47,14 +47,11 @@ impl KubeLowLevel {
             .chain_err(|| "Failed to build Pkcs12")?;
 
         let req_ca_cert = reqwest::Certificate::from_der(&ca_cert.to_der().unwrap()).unwrap();
-        let req_pkcs_cert = reqwest::Pkcs12::from_der(&pkcs_cert.to_der().unwrap(), "").unwrap();
+        let req_pkcs_cert = reqwest::Identity::from_pkcs12_der(&pkcs_cert.to_der().unwrap(), "").unwrap();
 
         let client = reqwest::Client::builder()
-            .chain_err(|| "Failed to create reqwest client builder")?
             .add_root_certificate(req_ca_cert)
-            .chain_err(|| "Failed to add root cert to reqwest client")?
             .identity(req_pkcs_cert)
-            .chain_err(|| "Failed to add PKCS cert and key to reqwest client")?
             .danger_disable_hostname_verification()
             .build()
             .chain_err(|| "Failed to build reqwest client")?;
@@ -77,7 +74,7 @@ impl KubeLowLevel {
 
     pub fn exists(&self, route: &ResourceRoute) -> Result<bool> {
         let url = route.build(&self.base_url)?;
-        let mut response = self.client.get(url)?
+        let mut response = self.client.get(url)
             .send()
             .chain_err(|| "Failed to GET URL")?;
 
@@ -173,7 +170,7 @@ impl KubeLowLevel {
         let resource_url = self.base_url.join(&format!("{}/{}", kind_path, name))?;
 
         // First check if resource already exists
-        let mut response = self.client.get(resource_url)?.send()
+        let mut response = self.client.get(resource_url).send()
             .chain_err(|| "Failed to GET URL")?;
         match response.status() {
             // Apply if resource doesn't exist
@@ -234,7 +231,7 @@ impl KubeLowLevel {
     //
 
     pub(crate) fn http_get(&self, url: Url) -> Result<reqwest::Response> {
-        let mut req = self.client.get(url)?;
+        let mut req = self.client.get(url);
 
         let mut response = req.send().chain_err(|| "Failed to GET URL")?;
 
@@ -255,8 +252,8 @@ impl KubeLowLevel {
     where S: Serialize,
           D: DeserializeOwned,
     {
-        let mut response = self.client.post(url)?
-            .json(&body).expect("JSON serialization failed")
+        let mut response = self.client.post(url)
+            .json(&body)
             .send()
             .chain_err(|| "Failed to POST URL")?;
 
@@ -273,8 +270,8 @@ impl KubeLowLevel {
     where S: Serialize,
           D: DeserializeOwned,
     {
-        let mut response = self.client.put(url)?
-            .json(&body).expect("JSON serialization failed")
+        let mut response = self.client.put(url)
+            .json(&body)
             .send()
             .chain_err(|| "Failed to PUT URL")?;
 
@@ -288,7 +285,7 @@ impl KubeLowLevel {
     }
 
     pub(crate) fn http_delete(&self, url: Url) -> Result<reqwest::Response> {
-        let mut response = self.client.delete(url)?
+        let mut response = self.client.delete(url)
             .send()
             .chain_err(|| "Failed to DELETE URL")?;
 
