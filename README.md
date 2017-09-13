@@ -1,15 +1,13 @@
-The beginnings of a Rust kubernetes client
+An ergonomic Kubernetes API client to manage Kubernetes resources
 
-It's still very experimental and rough aruond the edges.
-It has basic support for many common operations, but is far from complete.
-An documentation is still very lacking.
+[Documentation](http://docs.rs/kubeclient)
 
-If there is a specific API you need feel free to open an issue and I might try to bump it up in priority.
-Alternatively, consider submitting a PR.
+[![Crates.io](https://img.shields.io/crates/v/kubeclient.svg?maxAge=2592000)](https://crates.io/crates/kubeclient)
+
 
 ## Usage
 
-For now, using it feels about like this:
+Basic usage looks like this:
 
 ```rust
 use kubeclient::prelude::*;
@@ -27,3 +25,12 @@ if kube.healthy()? {
   }
 }
 ```
+
+## Status
+
+This client is still very experimental and rough aruond the edges.
+It has basic support for many common operations, namely the ones I've personally
+needed up to this point, but is far from complete, and documentation is still lacking.
+
+If there is a specific API you need feel free to open an issue or submit a PR.
+
