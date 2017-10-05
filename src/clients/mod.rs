@@ -173,8 +173,7 @@ impl Kubernetes {
     ///
     /// This may be a single file or an entire directory.
     /// If the resource(s) specified already exists, this method
-    /// will NOT replace the resource, but will simply return
-    /// the already existing resource.
+    /// will NOT replace the resource.
     ///
     /// ## Examples
     ///
@@ -184,7 +183,35 @@ impl Kubernetes {
     /// let is_healthy = kube.apply("web-server/deployment.yaml")?;
     /// ```
     pub fn apply<P: AsRef<Path>>(&self, path: P) -> Result<()> {
-        let _: Vec<Value> = self.low_level.apply_path(path)?;
+        let _: Vec<Value> = self.low_level.each_resource_path(path, |path| {
+            self.low_level.apply_file(&path)
+                .chain_err(|| format!("Failed to apply {}", path.display()))
+        })?;
+
+        Ok(())
+    }
+
+    /// Replaces a JSON or YAML resource file
+    ///
+    /// This is similar to the `kubectl replace` CLI commands.
+    ///
+    /// This may be a single file or an entire directory.
+    /// If the resource(s) specified already exists, this method
+    /// will replace the resource.
+    ///
+    /// ## Examples
+    ///
+    /// ```no_run
+    /// # use kubeclient::prelude::*;
+    /// let kube = Kubernetes::load_conf("admin.conf")?;
+    /// let is_healthy = kube.replace("web-server/deployment.yaml")?;
+    /// ```
+    pub fn replace<P: AsRef<Path>>(&self, path: P) -> Result<()> {
+        let _: Vec<Value> = self.low_level.each_resource_path(path, |path| {
+            self.low_level.replace_file(&path)
+                .chain_err(|| format!("Failed to replace {}", path.display()))
+        })?;
+
         Ok(())
     }
 

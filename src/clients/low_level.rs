@@ -97,16 +97,16 @@ impl KubeLowLevel {
         self.http_get_json(url)
     }
 
-    pub fn create<S, D>(&self, route: &KindRoute, resource: &str, data: &S) -> Result<D>
-    where S: Serialize,
-          D: DeserializeOwned
-    {
-        let body = json!({
-            "data": data,
-            "metadata": { "name": resource }
-        });
-        self.apply(route, &body)
-    }
+    // pub fn create<S, D>(&self, route: &KindRoute, resource: &str, data: &S) -> Result<D>
+    // where S: Serialize,
+    //       D: DeserializeOwned
+    // {
+    //     let body = json!({
+    //         "data": data,
+    //         "metadata": { "name": resource }
+    //     });
+    //     self.apply(route, &body)
+    // }
 
     pub fn apply<S, D>(&self, route: &KindRoute, body: &S) -> Result<D>
     where S: Serialize,
@@ -116,8 +116,10 @@ impl KubeLowLevel {
         self.http_post_json(url, &body)
     }
 
-    pub fn apply_path<D, P: AsRef<Path>>(&self, path: P) -> Result<Vec<D>>
-    where D: DeserializeOwned + ::std::fmt::Debug
+    pub(crate) fn each_resource_path<D, F, P: AsRef<Path>>(&self, path: P, handler: F) -> Result<Vec<D>>
+    where
+        D: DeserializeOwned + ::std::fmt::Debug,
+        F: Fn(&Path) -> Result<D>,
     {
         WalkDir::new(path).max_depth(1).into_iter()
             .filter_map(|e| e.ok())
@@ -129,15 +131,12 @@ impl KubeLowLevel {
                 }
                 false
             })
-            .map(|entry| {
-                self.apply_file(entry.path())
-                    .chain_err(|| format!("Failed to apply {}", entry.path().display()))
-            })
+            .map(|entry| handler(entry.path()))
             .collect()
     }
 
     // TODO: This function could use a serious refactoring
-    fn apply_file<D>(&self, path: &Path) -> Result<D>
+    pub(crate) fn apply_file<D>(&self, path: &Path) -> Result<D>
     where D: DeserializeOwned + ::std::fmt::Debug
     {
         let mut bytes = Vec::new();
@@ -187,23 +186,26 @@ impl KubeLowLevel {
         }
     }
 
-    fn replace_file<D>(&self, mut file: File, format: &str) -> Result<D>
+    pub(crate) fn replace_file<D>(&self, path: &Path) -> Result<D>
     where D: DeserializeOwned + ::std::fmt::Debug
     {
         let mut bytes = Vec::new();
+        let ext = path.extension().unwrap().to_string_lossy().to_lowercase();
+        let mut file = File::open(path)?;
         file.read_to_end(&mut bytes)?;
-        // FIXME: don't double deserialize. use json pointers to extract fields (and improve errors when missing fields)
-        let (mini, body): (MinimalResource, Value) = match &*format.to_lowercase() {
-            "json" => (serde_json::from_slice(&bytes)?, serde_json::from_slice(&bytes)?),
-            "yaml" => (serde_yaml::from_slice(&bytes)?, serde_yaml::from_slice(&bytes)?),
+        let body: Value = match &*ext {
+            "json" => serde_json::from_slice(&bytes)?,
+            "yaml" => serde_yaml::from_slice(&bytes)?,
             _ => unreachable!("kubeclient bug: unexpected and unfiltered file extension"),
         };
+        let mini: MinimalResource = serde_json::from_value(body.clone())?;
+
         let root = if mini.api_version.starts_with("v") {
             "/api"
         } else {
             "/apis"
         };
-        let name = mini.metadata.name.expect("must set metadata.name to replace kubernetes resource");
+        let name = mini.metadata.name.expect("must set metadata.name to apply kubernetes resource");
         let url = match mini.metadata.namespace {
             Some(ns) => self.base_url.join(
                 &format!("{}/{}/namespaces/{}/{}/{}", root, mini.api_version, ns, mini.kind.plural, name)
@@ -372,23 +374,23 @@ impl<'a> ResourceRoute<'a> {
     }
 
 
-    pub fn query<I, K, V>(&mut self, query: I) -> &mut ResourceRoute<'a>
-    where
-        I: IntoIterator,
-        I::Item: Borrow<(K, V)>,
-        K: AsRef<str>,
-        V: AsRef<str>,
-    {
-        // This is ugly, but today the borrow checker beat me
-        let pairs = query.into_iter()
-            .map(|i| {
-                let (ref k, ref v) = *i.borrow();
-                (k.as_ref().to_owned(), v.as_ref().to_owned())
-            })
-            .collect();
-        self.query = Some(pairs);
-        self
-    }
+    // pub fn query<I, K, V>(&mut self, query: I) -> &mut ResourceRoute<'a>
+    // where
+    //     I: IntoIterator,
+    //     I::Item: Borrow<(K, V)>,
+    //     K: AsRef<str>,
+    //     V: AsRef<str>,
+    // {
+    //     // This is ugly, but today the borrow checker beat me
+    //     let pairs = query.into_iter()
+    //         .map(|i| {
+    //             let (ref k, ref v) = *i.borrow();
+    //             (k.as_ref().to_owned(), v.as_ref().to_owned())
+    //         })
+    //         .collect();
+    //     self.query = Some(pairs);
+    //     self
+    // }
 
     pub(crate) fn build(&self, base_url: &Url) -> Result<Url> {
         let path = match self.namespace {
