@@ -8,6 +8,8 @@ description = "An ergonomic Kubernetes API client to manage Kubernetes resources
 documentation = "http://docs.rs/kubeclient"
 repository = "https://github.com/anowell/kubeclient-rs"
 readme = "README.md"
+keywords = ["kubernetes", "kubectl", "k8s"]
+categories =["web-programming::http-client"]
 
 [dependencies]
 base64 = "0.6.0"
