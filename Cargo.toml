@@ -21,4 +21,4 @@ url = { version = "1.5.1" }
 url_serde = "0.2.0"
 openssl = "0.9.15"
 walkdir = "1.0.7"
-reqwest = { git = "https://github.com/seanmonstar/reqwest.git" }
+reqwest = "0.8.0"
