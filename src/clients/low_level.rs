@@ -66,11 +66,6 @@ impl KubeLowLevel {
         Ok(output)
     }
 
-    pub fn check<D>(&self, route: &str) -> Result<D>
-    where D: DeserializeOwned
-    {
-        self.http_get_json(self.base_url.join(route)?)
-    }
 
     pub fn exists(&self, route: &ResourceRoute) -> Result<bool> {
         let url = route.build(&self.base_url)?;
