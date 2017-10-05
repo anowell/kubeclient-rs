@@ -1,9 +1,10 @@
 An ergonomic Kubernetes API client to manage Kubernetes resources
 
-[Documentation](http://docs.rs/kubeclient)
-
 [![Crates.io](https://img.shields.io/crates/v/kubeclient.svg?maxAge=2592000)](https://crates.io/crates/kubeclient)
 
+## Documentation
+
+[docs.rs/kubeclient](http://docs.rs/kubeclient)
 
 ## Usage
 
@@ -28,9 +29,9 @@ if kube.healthy()? {
 
 ## Status
 
-This client is still very experimental and rough aruond the edges.
-It has basic support for many common operations, namely the ones I've personally
-needed up to this point, but is far from complete, and documentation is still lacking.
+This client is still very incomplete, so expect to file issues and PRs to
+unblock yourself if you actually take this crate as a dependency.
 
-If there is a specific API you need feel free to open an issue or submit a PR.
-
+It has basic support for many common operations, namely the ones I've personally needed,
+but I'm not yet using this library in production, so it's not very high priority for me.
+That said, I will commit to discussing issues and reviewing PRs in a timely manner.

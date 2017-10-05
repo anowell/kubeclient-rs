@@ -1,6 +1,6 @@
 //! An ergonomic Kubernetes API client to manage kubernetes resources
 //!
-//! **Disclaimer**: This crate is still super minimal in functionality.
+//! **Disclaimer**: This crate is still super very incomplete in functionality.
 //! So expect to file issues and PRs to unblock yourself if you actually
 //! take this crate as a dependency.
 //!

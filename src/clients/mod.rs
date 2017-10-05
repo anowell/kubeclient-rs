@@ -21,6 +21,11 @@ pub struct Kubernetes {
 impl Kubernetes {
     /// Initialize a Kubernetes client from a Kubernets config file
     ///
+    /// **Incomplete**: `load_conf` was only implemented to meet
+    /// the needs of a single config, so it is currently hard-coded
+    /// to require a CA cert, a client cert, and skip hostname verification.
+    /// PRs for improving this are much appreciated.
+    ///
     /// ## Examples
     ///
     /// ```no_run
