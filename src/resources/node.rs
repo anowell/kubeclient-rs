@@ -8,16 +8,16 @@ pub(crate) static NODE_INFO: KindInfo = KindInfo {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Node {
-    spec: NodeSpec,
-    metadata: Metadata,
+    pub spec: NodeSpec,
+    pub metadata: Metadata,
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct NodeSpec {
     #[serde(rename = "podCIDR")]
-    pod_cidr: Option<String>,
+    pub pod_cidr: Option<String>,
     #[serde(rename = "providerID")]
-    provider_id: Option<String>,
+    pub provider_id: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
