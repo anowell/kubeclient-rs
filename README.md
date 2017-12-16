@@ -8,23 +8,19 @@ An ergonomic Kubernetes API client to manage Kubernetes resources
 
 ## Usage
 
-Basic usage looks like this:
+You can find out about the basic usage in [examples](/examples).
 
-```rust
-use kubeclient::prelude::*;
+```
+# Ensure you have a valid kubeconfig in admin.conf
 
-let kube = Kubernetes::load_conf("admin.conf")?;
+## Get secret
+cargo run --example get-secret secret123
+[...]
 
-if kube.healthy()? {
-  if !kube.secrets().exists("my-secret")? {
-    let output = kube.secrets().get("my-secret")?
-    // ...
-  }
+## List nodes
+cargo run --example list-nodes
+[...]
 
-  for node in kube.nodes().list()? {
-    println!("Found node: {}", node.metadata.name);
-  }
-}
 ```
 
 ## Status
