@@ -3,7 +3,7 @@ use kubeclient::prelude::*;
 use kubeclient::errors::*;
 use std::env;
 
-fn run_main() -> Result<i32> {
+fn run_list_pods() -> Result<i32> {
     // filename is set to $KUBECONFIG if the env var is available.
     // Otherwise it falls back to "admin.conf".
     let filename = env::var("KUBECONFIG").ok();
@@ -15,8 +15,8 @@ fn run_main() -> Result<i32> {
     let kube = Kubernetes::load_conf(filename)?;
 
     if kube.healthy()? {
-        for node in kube.nodes().list(None)? {
-            println!("found node: {:?}", node);
+        for pod in kube.pods().namespace("default").list(None)? {
+            println!("found pod: {:?}", pod);
         }
     }
 
@@ -24,7 +24,7 @@ fn run_main() -> Result<i32> {
 }
 
 fn main() {
-    match run_main() {
+    match run_list_pods() {
         Ok(n) => println!("Success error code is {}", n),
         Err(e) => println!("Error: {}", e),
     }
