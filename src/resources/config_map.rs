@@ -1,5 +1,6 @@
 use super::*;
 use std::collections::BTreeMap;
+use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 
 pub(crate) static CONFIG_MAP_INFO: KindInfo = KindInfo {
     plural: "configmaps",
@@ -9,14 +10,17 @@ pub(crate) static CONFIG_MAP_INFO: KindInfo = KindInfo {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ConfigMap {
+    /// Data contains the configuration data. Each key must consist of alphanumeric characters, '-', '_' or '.'.
     data: BTreeMap<String, String>,
-    metadata: Metadata,
+
+    /// Standard object's metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+    metadata: ObjectMeta,
 }
 
 impl ConfigMap {
     pub fn new(name: &str) -> ConfigMap {
         let data = BTreeMap::new();
-        let metadata = Metadata{ name: Some(name.to_owned()), ..Default::default() };
+        let metadata = ObjectMeta{ name: Some(name.to_owned()), ..Default::default() };
         ConfigMap { data, metadata }
     }
 

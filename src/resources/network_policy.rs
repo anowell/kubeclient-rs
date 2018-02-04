@@ -1,4 +1,6 @@
 use super::*;
+use k8s_openapi::api::networking::v1::NetworkPolicySpec;
+use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 
 pub(crate) static NETWORK_POLICY_INFO: KindInfo = KindInfo {
     plural: "networkpolicies",
@@ -6,17 +8,13 @@ pub(crate) static NETWORK_POLICY_INFO: KindInfo = KindInfo {
     api: V1_BETA_API,
 };
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct NetworkPolicy {
+    /// Specification of the desired behavior for this NetworkPolicy.
     pub spec: NetworkPolicySpec,
-    pub metadata: Metadata,
-}
 
-#[derive(Serialize, Deserialize, Debug, Default)]
-#[serde(rename_all = "camelCase")]
-pub struct NetworkPolicySpec {
-    // pub ingress: Option<Vec<NetworkPolicyIngressRule>>,
-    // pub podSelector : Option<LabelSelector>,
+    /// Standard object's metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+    pub metadata: ObjectMeta,
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
@@ -25,12 +23,10 @@ pub struct NetworkPolicyList {
 }
 
 
-
 impl NetworkPolicy {
     pub fn new(name: &str) -> NetworkPolicy {
-        let spec = NetworkPolicySpec::default();
-        let metadata = Metadata{ name: Some(name.to_owned()), ..Default::default() };
-        NetworkPolicy { spec, metadata }
+        let metadata = ObjectMeta{ name: Some(name.to_owned()), ..Default::default() };
+        NetworkPolicy { metadata, ..Default::default() }
     }
 }
 

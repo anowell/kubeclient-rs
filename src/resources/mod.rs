@@ -16,7 +16,7 @@ pub use self::network_policy::*;
 pub use self::pod::*;
 pub use self::service::*;
 
-use chrono::{DateTime, Utc};
+use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use std::fmt;
@@ -79,20 +79,9 @@ pub trait ListableResource: Resource {
 pub struct Status {
     pub kind: String,
     pub api_version: String,
-    pub metadata: Metadata,
+    pub metadata: ObjectMeta,
     pub status: String,
     pub message: String,
-}
-
-#[derive(Serialize, Deserialize, Debug, Default)]
-#[serde(rename_all = "camelCase")]
-pub struct Metadata {
-    pub name: Option<String>,
-    pub namespace: Option<String>,
-    pub uid: Option<String>,
-    pub creation_timestamp: Option<DateTime<Utc>>,
-    pub annotations: Option<BTreeMap<String, String>>,
-    pub labels: Option<BTreeMap<String, String>>,
 }
 
 #[derive(Clone, Debug, Default)]

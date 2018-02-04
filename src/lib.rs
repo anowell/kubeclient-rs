@@ -22,7 +22,7 @@
 //!   }
 //!
 //!   for node in kube.nodes().list()? {
-//!     println!("Found node: {}", node.metadata.name);
+//!     println!("Found node: {}", node.metadata.name.unwrap());
 //!   }
 //! }
 //! ```
@@ -33,6 +33,7 @@
 extern crate base64;
 extern crate chrono;
 extern crate openssl;
+extern crate k8s_openapi;
 extern crate reqwest;
 extern crate serde;
 extern crate serde_json;

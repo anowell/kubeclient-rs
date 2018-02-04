@@ -13,6 +13,8 @@ use url::Url;
 use std::borrow::Borrow;
 use walkdir::WalkDir;
 use errors::*;
+use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
+
 
 #[derive(Clone)]
 pub struct KubeLowLevel {
@@ -26,7 +28,7 @@ pub struct KubeLowLevel {
 struct MinimalResource {
     api_version: String,
     kind: Kind,
-    metadata: Metadata,
+    metadata: ObjectMeta,
 }
 
 impl KubeLowLevel {

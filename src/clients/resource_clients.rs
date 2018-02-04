@@ -104,6 +104,7 @@ pub trait WriteClient {
     ///
     /// ```no_run
     /// # use kubeclient::prelude::*;
+    /// # use kubeclient::resources::ConfigMap;
     /// let kube = Kubernetes::load_conf("admin.conf")?;
     /// let mut cfg_map = ConfigMap::new("stage-config")?;
     /// cfg_map.insert("environment", "production");

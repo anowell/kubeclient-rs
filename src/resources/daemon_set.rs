@@ -1,5 +1,6 @@
 use super::*;
-use serde_json::Value;
+use k8s_openapi::api::apps::v1beta2::{DaemonSetSpec, DaemonSetStatus};
+use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 
 pub(crate) static DAEMON_SET_INFO: KindInfo = KindInfo {
     plural: "daemonsets",
@@ -9,25 +10,15 @@ pub(crate) static DAEMON_SET_INFO: KindInfo = KindInfo {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct DaemonSet {
+    /// The desired behavior of this daemon set. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status
     pub spec: DaemonSetSpec,
-    pub metadata: Metadata,
+
+    /// Standard object's metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+    pub metadata: ObjectMeta,
+
+    /// The current status of this daemon set. This data may be out of date by some window of time. Populated by the system. Read-only. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<DaemonSetStatus>,
-}
-
-#[derive(Serialize, Deserialize, Debug, Default)]
-#[serde(rename_all = "camelCase")]
-pub struct DaemonSetSpec {
-    pub selector: Option<Value>,
-    pub template: Option<Value>,
-}
-
-#[derive(Serialize, Deserialize, Debug, Default)]
-#[serde(rename_all = "camelCase")]
-pub struct DaemonSetStatus {
-    pub current_number_scheduled : u32,
-    pub desired_number_scheduled : u32,
-    pub number_misscheduled : u32,
-    pub number_ready : u32,
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
@@ -38,7 +29,7 @@ pub struct DaemonSetList {
 impl DaemonSet {
     pub fn new(name: &str) -> DaemonSet {
         let spec = DaemonSetSpec::default();
-        let metadata = Metadata{ name: Some(name.to_owned()), ..Default::default() };
+        let metadata = ObjectMeta{ name: Some(name.to_owned()), ..Default::default() };
         DaemonSet { spec, metadata, status: None }
     }
 }

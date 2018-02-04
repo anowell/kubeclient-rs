@@ -1,5 +1,6 @@
 use super::*;
-use serde_json::Value;
+use k8s_openapi::api::core::v1::{ServiceSpec, ServiceStatus};
+use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 
 pub(crate) static SERVICE_INFO: KindInfo = KindInfo {
     plural: "services",
@@ -7,34 +8,17 @@ pub(crate) static SERVICE_INFO: KindInfo = KindInfo {
     api: V1_API,
 };
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Service {
+    /// Spec defines the behavior of a service. https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status
     pub spec: ServiceSpec,
-    pub metadata: Metadata,
-}
 
-#[derive(Serialize, Deserialize, Debug, Default)]
-#[serde(rename_all = "camelCase")]
-pub struct ServiceSpec {
-    #[serde(rename = "clusterIP")]
-    pub cluster_ip: Option<String>,
-    #[serde(rename = "externalIPs")]
-    pub external_ips: Option<Vec<String>>,
-    pub external_name: Option<String>,
-    #[serde(rename = "loadBalancerIP")]
-    pub load_balancer_ip: String,
-    pub load_balancer_source_ranges: Option<Vec<String>>,
-    pub ports: Option<Vec<Value>>, // TODO: ServicePort type
-    pub selector: Option<BTreeMap<String, String>>,
-    pub session_affinity: Option<String>,
-    #[serde(rename = "type")]
-    pub service_type: Option<String>,
-}
+    /// Standard object's metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+    pub metadata: ObjectMeta,
 
-#[derive(Serialize, Deserialize, Debug, Default)]
-#[serde(rename_all = "camelCase")]
-pub struct ServiceStatus {
-    pub load_balancer: Option<Value>, // TODO: LoadBalancerStatus type
+    /// Most recently observed status of the service. Populated by the system. Read-only. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub status: Option<ServiceStatus>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
@@ -44,9 +28,8 @@ pub struct ServiceList {
 
 impl Service {
     pub fn new(name: &str) -> Service {
-        let spec = ServiceSpec::default();
-        let metadata = Metadata{ name: Some(name.to_owned()), ..Default::default() };
-        Service { spec, metadata }
+        let metadata = ObjectMeta{ name: Some(name.to_owned()), ..Default::default() };
+        Service { metadata, ..Default::default() }
     }
 }
 

@@ -1,6 +1,7 @@
 use super::*;
 use std::collections::BTreeMap;
 use base64;
+use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 
 pub(crate) static SECRET_INFO: KindInfo = KindInfo {
     plural: "secrets",
@@ -11,13 +12,13 @@ pub(crate) static SECRET_INFO: KindInfo = KindInfo {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Secret {
     data: BTreeMap<String, String>,
-    metadata: Metadata,
+    metadata: ObjectMeta,
 }
 
 impl Secret {
     pub fn new(name: &str) -> Secret {
         let data = BTreeMap::new();
-        let metadata = Metadata{ name: Some(name.to_owned()), ..Default::default() };
+        let metadata = ObjectMeta{ name: Some(name.to_owned()), ..Default::default() };
         Secret { data, metadata }
     }
 
