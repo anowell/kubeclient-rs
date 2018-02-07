@@ -1,11 +1,11 @@
-use reqwest::{self, StatusCode};
+use reqwest::{self, header, StatusCode};
 use std::path::Path;
 use config::KubeConfig;
 use resources::*;
 use std::fs::File;
 use std::io::Read;
 use openssl::pkcs12::Pkcs12;
-use serde::{Serialize};
+use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::{self, Value};
 use serde_yaml;
@@ -39,24 +39,37 @@ impl KubeLowLevel {
 
         let cluster = context.cluster;
 
-        let ca_cert = cluster.ca_cert()
-            .chain_err(|| "kubeconfig missing CA cert")?;
-        let client_cert = auth_info.client_certificate()
-            .chain_err(|| "kubeconfig missing client cert")?;
-        let client_key = auth_info.client_key().chain_err(|| "kubeconfig missing client key")?;
-        let pkcs_cert = Pkcs12::builder()
-            .build("", "admin", &client_key, &client_cert)
-            .chain_err(|| "Failed to build Pkcs12")?;
+        let mut headers = header::Headers::new();
+        let mut client = reqwest::Client::builder();
 
-        let req_ca_cert = reqwest::Certificate::from_der(&ca_cert.to_der().unwrap()).unwrap();
-        let req_pkcs_cert = reqwest::Identity::from_pkcs12_der(&pkcs_cert.to_der().unwrap(), "").unwrap();
+        let mut client = if let Some(ca_cert) = cluster.ca_cert() {
+            let req_ca_cert = reqwest::Certificate::from_der(&ca_cert.to_der().unwrap()).unwrap();
+            client.add_root_certificate(req_ca_cert)
+        } else { &mut client };
 
-        let client = reqwest::Client::builder()
-            .add_root_certificate(req_ca_cert)
-            .identity(req_pkcs_cert)
-            .danger_disable_hostname_verification()
-            .build()
-            .chain_err(|| "Failed to build reqwest client")?;
+        let client = if auth_info.client_certificate().is_some() && auth_info.client_key().is_some() {
+            let crt = auth_info.client_certificate().unwrap();
+            let key = auth_info.client_key().unwrap();
+            let pkcs_cert = Pkcs12::builder().build("", "admin", &key, &crt).chain_err(|| "Failed to build Pkcs12")?;
+            let req_pkcs_cert = reqwest::Identity::from_pkcs12_der(&pkcs_cert.to_der().unwrap(), "").unwrap();
+            client.identity(req_pkcs_cert)
+        } else { &mut client };
+        
+        if let Some(username) = auth_info.username {
+            headers.set(header::Authorization(
+                header::Basic { username: username,
+                                password: auth_info.password }
+            ));
+        } else if let Some(token) = auth_info.token {
+            headers.set(header::Authorization(
+                header::Bearer { token: token }
+            ));
+        }
+
+        let client = client.default_headers(headers)
+                           .danger_disable_hostname_verification()
+                           .build()
+                           .chain_err(|| "Failed to build reqwest client")?;
 
         Ok(KubeLowLevel { client, base_url: cluster.server })
     }
@@ -211,10 +224,10 @@ impl KubeLowLevel {
         let url = match mini.metadata.namespace {
             Some(ns) => self.base_url.join(
                 &format!("{}/{}/namespaces/{}/{}/{}", root, mini.api_version, ns, mini.kind.plural, name)
-            )?,
+                )?,
             None => self.base_url.join(
                 &format!("{}/{}/{}/{}", root, mini.api_version, mini.kind.plural, name)
-            )?,
+                )?,
         };
         let resp = self.http_put_json(url, &body)?;
         Ok(resp)
