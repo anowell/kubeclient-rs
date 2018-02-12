@@ -5,6 +5,7 @@
 
 use std::env;
 use std::fs::File;
+use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use serde_yaml;
 use openssl::x509::X509;
@@ -48,17 +49,35 @@ pub struct Cluster {
     #[serde(rename = "insecure-skip-tls-verify")]
     pub insecure_tls: Option<bool>,
     #[serde(rename = "certificate-authority")]
-    pub ca: Option<String>,
+    ca_file: Option<String>,
     #[serde(rename = "certificate-authority-data")]
     ca_data: Option<String>,
     pub extensions: Option<Vec<NamedExtension>>,
 }
 
+/// Given two Option<String> parameters representing
+/// base64 encoded data, or file name with the data
+/// return the data form the first found in the specified order.
+fn get_from_b64data_or_file(data: &Option<String>, file: &Option<String>) -> Option<String> {
+    if let &Some(ref data) = data {
+        let decoded = base64::decode(&data).expect("Unable to decode base64.");
+        Some(String::from_utf8(decoded).expect("Unable to convert to string."))
+    } else if let &Some(ref file) = file {
+        let mut data = String::new();
+        let mut f = File::open(file).expect("Unable to open file.");
+        f.read_to_string(&mut data)
+            .expect("File data is not UTF-8.");
+        Some(data)
+    } else {
+        None
+    }
+}
+
 impl Cluster {
     pub fn ca_cert(&self) -> Option<X509> {
-        self.ca_data.as_ref()
-            .map(|k| base64::decode(&k).expect("Invalid kubeconfig - ca cert is not valid base64"))
-            .map(|k| X509::from_pem(&k).expect("Invalid kubeconfig - ca cert is not PEM-encoded"))
+        get_from_b64data_or_file(&self.ca_data, &self.ca_file).map(|k| {
+            X509::from_pem(k.as_ref()).expect("Invalid kubeconfig - ca cert is not PEM-encoded")
+        })
     }
 }
 
@@ -75,24 +94,28 @@ pub struct AuthInfo {
     pub token: Option<String>,
     #[serde(rename = "tokenFile")]
     pub token_file: Option<String>,
+    #[serde(rename = "client-certificate")]
+    client_certificate_file: Option<String>,
     #[serde(rename = "client-certificate-data")]
-    client_certificate: Option<String>,
+    client_certificate_data: Option<String>,
+    #[serde(rename = "client-key")]
+    pub client_key_file: Option<String>,
     #[serde(rename = "client-key-data")]
-    pub client_key: Option<String>,
+    pub client_key_data: Option<String>,
     pub impersonate: Option<String>,
     //TODO
 }
 
 impl AuthInfo {
     pub fn client_certificate(&self) -> Option<X509> {
-        self.client_certificate.as_ref()
-            .map(|k| base64::decode(&k).expect("Invalid kubeconfig - client cert is not valid base64"))
-            .map(|k| X509::from_pem(&k).expect("Invalid kubeconfig - client cert is not PEM-encoded"))
+        get_from_b64data_or_file(&self.client_certificate_data, &self.client_certificate_file)
+            .map(|k| X509::from_pem(k.as_ref())
+                .expect("Invalid kubeconfig - client cert is not PEM-encoded"))
     }
     pub fn client_key(&self) -> Option<PKey> {
-        self.client_key.as_ref()
-            .map(|k| base64::decode(&k).expect("Invalid kubeconfig - client key is not valid base64"))
-            .map(|k| PKey::private_key_from_pem(&k).expect("Invalid kubeconfig - client key is not PEM-encoded"))
+        get_from_b64data_or_file(&self.client_key_data, &self.client_key_file)
+            .map(|k| PKey::private_key_from_pem(k.as_ref())
+                .expect("Invalid kubeconfig - client key is not PEM-encoded"))
     }
 }
 
