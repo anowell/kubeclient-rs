@@ -20,7 +20,7 @@ pub struct KubeConfig {
     pub kind: Option<String>,
     #[serde(rename = "apiVersion")]
     pub api_version: Option<String>,
-    pub preferences: Preferences,
+    pub preferences: Option<Preferences>,
     pub clusters: Vec<NamedCluster>,
     pub users: Vec<NamedAuthInfo>,
     pub contexts: Vec<NamedContext>,
