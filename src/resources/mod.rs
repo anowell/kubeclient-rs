@@ -27,7 +27,16 @@ pub(crate) const V1_API: &str = "/api/v1";
 pub(crate) const V1_BETA_API: &str = "/apis/extensions/v1beta1";
 
 #[derive(Serialize, Deserialize, Debug)]
-pub enum Kind { DaemonSet, Deployment, ConfigMap, NetworkPolicy, Node, Pod, Secret, Service }
+pub enum Kind {
+    DaemonSet,
+    Deployment,
+    ConfigMap,
+    NetworkPolicy,
+    Node,
+    Pod,
+    Secret,
+    Service,
+}
 
 impl Deref for Kind {
     type Target = KindInfo;
@@ -93,6 +102,11 @@ pub struct ListQuery {
 }
 
 impl ListQuery {
+    pub fn new() -> Self {
+        ListQuery {
+            ..Default::default()
+        }
+    }
     pub fn as_query_pairs(&self) -> BTreeMap<&str, String> {
         let mut map = BTreeMap::new();
         if let Some(ref fs) = self.field_selector {
