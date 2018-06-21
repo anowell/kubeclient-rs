@@ -54,3 +54,5 @@ pub mod prelude {
 pub use clients::Kubernetes;
 pub use config::KubeConfig;
 pub use errors::Error;
+
+use k8s_openapi::v1_9 as k8s_api;

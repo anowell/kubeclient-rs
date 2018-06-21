@@ -1,6 +1,6 @@
 use super::*;
 use std::collections::BTreeMap;
-use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
+use k8s_api::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 
 pub(crate) static CONFIG_MAP_INFO: KindInfo = KindInfo {
     plural: "configmaps",
