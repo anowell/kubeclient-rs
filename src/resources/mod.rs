@@ -16,7 +16,7 @@ pub use self::network_policy::*;
 pub use self::pod::*;
 pub use self::service::*;
 
-use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
+use k8s_api::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use std::fmt;

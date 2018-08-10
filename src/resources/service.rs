@@ -1,6 +1,6 @@
 use super::*;
-use k8s_openapi::api::core::v1::{ServiceSpec, ServiceStatus};
-use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
+use k8s_api::api::core::v1::{ServiceSpec, ServiceStatus};
+use k8s_api::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 
 pub(crate) static SERVICE_INFO: KindInfo = KindInfo {
     plural: "services",
