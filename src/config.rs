@@ -9,7 +9,7 @@ use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use serde_yaml;
 use openssl::x509::X509;
-use openssl::pkey::PKey;
+use openssl::pkey::{PKey, Private};
 use url::Url;
 use url_serde;
 use base64;
@@ -112,7 +112,7 @@ impl AuthInfo {
             .map(|k| X509::from_pem(k.as_ref())
                 .expect("Invalid kubeconfig - client cert is not PEM-encoded"))
     }
-    pub fn client_key(&self) -> Option<PKey> {
+    pub fn client_key(&self) -> Option<PKey<Private>> {
         get_from_b64data_or_file(&self.client_key_data, &self.client_key_file)
             .map(|k| PKey::private_key_from_pem(k.as_ref())
                 .expect("Invalid kubeconfig - client key is not PEM-encoded"))

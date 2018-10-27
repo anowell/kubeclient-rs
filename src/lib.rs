@@ -32,6 +32,7 @@
 
 extern crate base64;
 extern crate chrono;
+extern crate headers_ext;
 extern crate openssl;
 extern crate k8s_openapi;
 extern crate reqwest;
