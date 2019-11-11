@@ -14,8 +14,7 @@ use url::Url;
 use std::borrow::Borrow;
 use walkdir::WalkDir;
 use errors::*;
-use k8s_api::apimachinery::pkg::apis::meta::v1::ObjectMeta;
-
+use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 
 #[derive(Clone)]
 pub struct KubeLowLevel {

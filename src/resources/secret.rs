@@ -1,7 +1,7 @@
 use super::*;
 use std::collections::BTreeMap;
 use base64;
-use k8s_api::apimachinery::pkg::apis::meta::v1::ObjectMeta;
+use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 
 pub(crate) static SECRET_INFO: KindInfo = KindInfo {
     plural: "secrets",
