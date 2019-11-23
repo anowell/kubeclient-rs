@@ -1,7 +1,7 @@
 use super::*;
-use k8s_api::api::apps::v1::{DeploymentSpec, DeploymentStatus};
-use k8s_api::api::apps::v1beta1::{ScaleSpec, ScaleStatus};
-use k8s_api::apimachinery::pkg::apis::meta::v1::ObjectMeta;
+use k8s_openapi::api::apps::v1::{DeploymentSpec, DeploymentStatus};
+use k8s_openapi::api::apps::v1beta1::{ScaleSpec, ScaleStatus};
+use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 
 pub(crate) static DEPLOYMENT_INFO: KindInfo = KindInfo {
     plural: "deployments",
